@@ -86,3 +86,29 @@ class EditBlogForm(FlaskForm):
     ])
     is_published = BooleanField('Publish')
     submit = SubmitField('Update Blog Post')
+
+
+class CommentForm(FlaskForm):
+    """Form for posting comments on blog posts"""
+    author_name = StringField('Your Name', validators=[
+        DataRequired(),
+        Length(min=2, max=120, message='Name must be between 2 and 120 characters')
+    ])
+    content = TextAreaField('Your Comment', validators=[
+        DataRequired(),
+        Length(min=3, max=2000, message='Comment must be between 3 and 2000 characters')
+    ])
+    submit = SubmitField('Post Comment')
+
+
+class ReplyCommentForm(FlaskForm):
+    """Form for replying to comments"""
+    author_name = StringField('Your Name', validators=[
+        DataRequired(),
+        Length(min=2, max=120, message='Name must be between 2 and 120 characters')
+    ])
+    content = TextAreaField('Your Reply', validators=[
+        DataRequired(),
+        Length(min=3, max=2000, message='Reply must be between 3 and 2000 characters')
+    ])
+    submit = SubmitField('Post Reply')

@@ -31,8 +31,8 @@ def create_app(config_class=Config):
     login_manager.init_app(app)
     
     # Import models (must be after extension initialization)
-    from models import User, Admin, BlogPost
-    from forms import SignUpForm, LoginForm, CreateBlogForm, EditBlogForm
+    from models import User, Admin, BlogPost, Comment
+    from forms import SignUpForm, LoginForm, CreateBlogForm, EditBlogForm, CommentForm, ReplyCommentForm
     
     # Add isinstance to template globals
     app.jinja_env.globals.update(isinstance=isinstance, Admin=Admin)
@@ -147,7 +147,8 @@ def create_app(config_class=Config):
             flash('This blog post is not available.', 'error')
             return redirect(url_for('blog'))
         
-        return render_template('blog/blog_detail.html', post=post)
+        form = CommentForm()
+        return render_template('blog/blog_detail.html', post=post, form=form)
     
     # Admin: Create blog post
     @app.route('/admin/blog/create', methods=['GET', 'POST'])
@@ -307,6 +308,129 @@ def create_app(config_class=Config):
     def uploaded_file(filename):
         """Serve uploaded files from the uploads folder"""
         return send_from_directory(Config.UPLOAD_FOLDER, filename)
+    
+    # Comment routes
+    @app.route('/blog/<int:blog_id>/comment', methods=['POST'])
+    def post_comment(blog_id):
+        """Post a comment on a blog post"""
+        post = BlogPost.query.get_or_404(blog_id)
+        
+        # Check if comments are enabled for this post
+        if not post.allow_comments:
+            flash('Comments are disabled for this post.', 'error')
+            return redirect(url_for('blog_detail', blog_id=blog_id))
+        
+        form = CommentForm()
+        if form.validate_on_submit():
+            # Get user_id if logged in
+            user_id = None
+            if current_user.is_authenticated:
+                user_id = current_user.id
+            
+            comment = Comment(
+                content=form.content.data,
+                author_name=form.author_name.data,
+                user_id=user_id,
+                blog_post_id=blog_id
+            )
+            
+            db.session.add(comment)
+            db.session.commit()
+            
+            flash('Your comment has been posted!', 'success')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    flash(f'{error}', 'error')
+        
+        return redirect(url_for('blog_detail', blog_id=blog_id))
+    
+    @app.route('/blog/<int:blog_id>/comment/<int:comment_id>/reply', methods=['POST'])
+    def reply_comment(blog_id, comment_id):
+        """Reply to a comment on a blog post"""
+        post = BlogPost.query.get_or_404(blog_id)
+        parent_comment = Comment.query.get_or_404(comment_id)
+        
+        # Check if comments are enabled
+        if not post.allow_comments:
+            flash('Comments are disabled for this post.', 'error')
+            return redirect(url_for('blog_detail', blog_id=blog_id))
+        
+        form = ReplyCommentForm()
+        if form.validate_on_submit():
+            # Only logged-in users can reply
+            if not current_user.is_authenticated:
+                flash('You must be logged in to reply to comments.', 'error')
+                return redirect(url_for('login'))
+            
+            user_id = None
+            if isinstance(current_user, User):
+                user_id = current_user.id
+            
+            reply = Comment(
+                content=form.content.data,
+                author_name=form.author_name.data,
+                user_id=user_id,
+                blog_post_id=blog_id,
+                parent_comment_id=comment_id
+            )
+            
+            db.session.add(reply)
+            db.session.commit()
+            
+            flash('Your reply has been posted!', 'success')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    flash(f'{error}', 'error')
+        
+        return redirect(url_for('blog_detail', blog_id=blog_id))
+    
+    # Admin: Toggle comments on a post
+    @app.route('/admin/blog/<int:blog_id>/toggle-comments', methods=['POST'])
+    @login_required
+    def toggle_comments(blog_id):
+        """Toggle comments on/off for a blog post"""
+        if not isinstance(current_user, Admin):
+            flash('You do not have permission to access this page.', 'error')
+            return redirect(url_for('index'))
+        
+        blog = BlogPost.query.get_or_404(blog_id)
+        
+        if blog.author_id != current_user.id:
+            flash('You can only manage comments on your own blog posts.', 'error')
+            return redirect(url_for('admin_blog_list'))
+        
+        blog.allow_comments = not blog.allow_comments
+        db.session.commit()
+        
+        status = 'enabled' if blog.allow_comments else 'disabled'
+        flash(f'Comments {status} for this post.', 'success')
+        return redirect(url_for('edit_blog', blog_id=blog_id))
+    
+    # Admin: Delete comment
+    @app.route('/admin/comment/<int:comment_id>/delete', methods=['POST'])
+    @login_required
+    def delete_comment(comment_id):
+        """Delete a comment (admin of blog post only)"""
+        if not isinstance(current_user, Admin):
+            flash('You do not have permission to access this page.', 'error')
+            return redirect(url_for('index'))
+        
+        comment = Comment.query.get_or_404(comment_id)
+        blog_id = comment.blog_post_id
+        blog = BlogPost.query.get_or_404(blog_id)
+        
+        # Only admin author can delete comments on their posts
+        if blog.author_id != current_user.id:
+            flash('You can only delete comments on your own blog posts.', 'error')
+            return redirect(url_for('blog_detail', blog_id=blog_id))
+        
+        db.session.delete(comment)
+        db.session.commit()
+        
+        flash('Comment deleted successfully!', 'success')
+        return redirect(url_for('blog_detail', blog_id=blog_id))
     
     return app
 

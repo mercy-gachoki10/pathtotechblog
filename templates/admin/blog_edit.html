@@ -84,6 +84,20 @@
                     <p class="form-help">Check to publish. Uncheck to save as draft.</p>
                 </div>
 
+                <div class="form-group">
+                    <h3>Comments Settings</h3>
+                    <p class="form-help">
+                        Comments are currently <strong>{{ 'ENABLED ✅' if blog.allow_comments else 'DISABLED ❌' }}</strong> on this post.
+                    </p>
+                    <form method="POST" action="{{ url_for('toggle_comments', blog_id=blog.id) }}" style="display: inline;">
+                        {% if blog.allow_comments %}
+                            <button type="submit" class="btn btn-secondary">🚫 Disable Comments</button>
+                        {% else %}
+                            <button type="submit" class="btn btn-secondary">✅ Enable Comments</button>
+                        {% endif %}
+                    </form>
+                </div>
+
                 <div class="form-actions">
                     {{ form.submit(class="btn btn-primary", value="Update Blog Post") }}
                     <a href="{{ url_for('admin_blog_list') }}" class="btn btn-secondary">Cancel</a>
