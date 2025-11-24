@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Women in Tech Community{% endblock %}
+
+{% block content %}
+    <section class="auth-section">
+        <div class="auth-container">
+            <div class="auth-box">
+                <h1>Welcome Back</h1>
+                <p class="auth-subtitle">Log in to your account</p>
+
+                <form class="auth-form" method="POST" action="{{ url_for('login') }}">
+                    <div class="form-group">
+                        <label for="email">Email Address *</label>
+                        <input type="email" id="email" name="email" required placeholder="your.email@example.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password *</label>
+                        <input type="password" id="password" name="password" required placeholder="Enter your password">
+                    </div>
+
+                    <button type="submit" class="submit-btn">Login</button>
+                </form>
+
+                <div class="auth-footer">
+                    <p>Don't have an account? <a href="{{ url_for('signup') }}">Sign up here</a></p>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}

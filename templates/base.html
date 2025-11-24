@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Women in Tech - A collaborative community for women in technology">
+    <meta name="theme-color" content="#1a1a1a">
+    <title>{% block title %}Women in Tech - Community{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Main Navigation -->
+    <nav class="navbar-main">
+        <a href="{{ url_for('index') }}" class="logo">
+            <i class="fas fa-code"></i> TechBlog
+        </a>
+        <ul class="nav-links" id="navLinks">
+            <li><a href="{{ url_for('blog') }}">BLOG</a></li>
+            <li><a href="{{ url_for('login') }}">LOGIN</a></li>
+            <li><a href="{{ url_for('signup') }}">SIGN UP</a></li>
+            <li><a href="{{ url_for('contact') }}">CONTACT US</a></li>
+        </ul>
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
+            <i class="fas fa-bars"></i>
+        </button>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2024 Women in Tech Community. All rights reserved.</p>
+        <p style="margin-top: 10px; font-size: 12px;">Built with <i class="fas fa-heart" style="color: #f5a623;"></i> for women in technology</p>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const navLinks = document.getElementById('navLinks');
+
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', function() {
+                navLinks.classList.toggle('active');
+            });
+        }
+
+        // Close menu when a link is clicked
+        const navItems = navLinks.querySelectorAll('a');
+        navItems.forEach(item => {
+            item.addEventListener('click', function() {
+                navLinks.classList.remove('active');
+            });
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

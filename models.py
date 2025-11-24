@@ -1,0 +1,26 @@
+from extension import db, login_manager
+from flask_login import UserMixin
+from datetime import datetime
+
+class User(UserMixin, db.Model):
+    """User model for authentication"""
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False, index=True)
+    email = db.Column(db.String(120), unique=True, nullable=False, index=True)
+    password = db.Column(db.String(255), nullable=False)
+    is_admin = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<User {self.username}>'
+
+    def get_id(self):
+        return str(self.id)
+
+
+# User loader for Flask-Login
+@login_manager.user_loader
+def load_user(user_id):
+    """Load user by ID for Flask-Login"""
+    return User.query.get(int(user_id))
