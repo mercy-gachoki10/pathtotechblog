@@ -19,19 +19,24 @@ def create_app(config_class=Config):
     
     # Register blueprints
     with app.app_context():
+        # Use migrations, but create tables if they don't exist
         db.create_all()
         
         # Initialize admin account if it doesn't exist
-        admin_user = Admin.query.filter_by(email='admin@techblog.com').first()
-        if not admin_user:
-            admin_user = Admin(
-                username='admin',
-                email='admin@techblog.com'
-            )
-            admin_user.set_password('admin123')
-            db.session.add(admin_user)
-            db.session.commit()
-            print("Admin account created successfully!")
+        try:
+            admin_user = Admin.query.filter_by(email='admin@techblog.com').first()
+            if not admin_user:
+                admin_user = Admin(
+                    username='admin',
+                    email='admin@techblog.com'
+                )
+                admin_user.set_password('admin123')
+                db.session.add(admin_user)
+                db.session.commit()
+                print("Admin account created successfully!")
+        except Exception as e:
+            # If there's an error querying, that's okay
+            pass
     
     # Home route
     @app.route('/')

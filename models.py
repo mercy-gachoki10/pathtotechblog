@@ -17,7 +17,7 @@ class User(UserMixin, db.Model):
         return f'<User {self.first_name} {self.last_name}>'
 
     def get_id(self):
-        return str(self.id)
+        return f"user_{self.id}"
     
     def set_password(self, password):
         """Hash and set password"""
@@ -41,7 +41,7 @@ class Admin(UserMixin, db.Model):
         return f'<Admin {self.username}>'
 
     def get_id(self):
-        return str(self.id)
+        return f"admin_{self.id}"
     
     def set_password(self, password):
         """Hash and set password"""
@@ -56,7 +56,22 @@ class Admin(UserMixin, db.Model):
 @login_manager.user_loader
 def load_user(user_id):
     """Load user by ID for Flask-Login - checks both User and Admin tables"""
-    user = User.query.get(int(user_id))
-    if user:
-        return user
-    return Admin.query.get(int(user_id))
+    try:
+        # Parse the user_id to determine type
+        if '_' in user_id:
+            user_type, user_id_num = user_id.split('_')
+            user_id_num = int(user_id_num)
+            
+            if user_type == 'user':
+                return User.query.get(user_id_num)
+            elif user_type == 'admin':
+                return Admin.query.get(user_id_num)
+        else:
+            # Fallback for old format (shouldn't happen)
+            user_id_num = int(user_id)
+            user = User.query.get(user_id_num)
+            if user:
+                return user
+            return Admin.query.get(user_id_num)
+    except (ValueError, AttributeError):
+        return None

@@ -1,335 +1,225 @@
 # Development Guide
 
-## Project Setup
+For general setup and features, see **README.md**.
 
-### 1. Virtual Environment
+## Quick Start
 
-Create and activate a virtual environment to isolate project dependencies:
-
-**Windows:**
 ```bash
+# 1. Setup
 python -m venv venv
-venv\Scripts\activate
-```
+venv\Scripts\activate  # Windows
 
-**macOS/Linux:**
-```bash
-python -m venv venv
-source venv/bin/activate
-```
-
-### 2. Install Dependencies
-
-```bash
+# 2. Install
 pip install -r requirements.txt
+
+# 3. Run
+python app.py
 ```
 
-### 3. Environment Configuration
+Visit: `http://localhost:5000`
 
-The `.env` file is already created. Verify these settings:
+## Database Management
 
-```env
-FLASK_APP=app.py
-FLASK_ENV=development
-SECRET_KEY=your-secret-key-here
-DATABASE_URL=sqlite:///app.db
-```
-
-**For production, change:**
-- `FLASK_ENV=production`
-- `SECRET_KEY` to a strong random key
-- `DATABASE_URL` to your production database
-
-### 4. Database Initialization
-
-**First time only:**
+**Initial Setup (auto-created on startup):**
 ```bash
-flask db init
-flask db migrate -m "Initial migration"
-flask db upgrade
+python app.py
 ```
 
-**After each model change:**
+**After Model Changes:**
 ```bash
+# Create migration
 flask db migrate -m "Description of changes"
+
+# Apply migration
 flask db upgrade
 ```
 
-## Running the Application
-
-Start the development server:
-
+**Reset Database:**
 ```bash
-flask run
+rm instance/app.db
+python app.py
 ```
 
-The app will be available at `http://localhost:5000`
-
-The server automatically reloads when you make code changes.
-
-## Project Structure Overview
+## Project Structure
 
 ```
-├── app.py                 # Flask application factory
-│                          # - create_app() function
-│                          # - Route definitions
-│
-├── config.py              # Configuration classes
-│                          # - Config (base)
-│                          # - DevelopmentConfig
-│                          # - TestingConfig
-│                          # - ProductionConfig
-│
-├── extension.py           # Flask extensions
-│                          # - SQLAlchemy (db)
-│                          # - Migrate (db migrations)
-│                          # - LoginManager (authentication)
-│
-├── models.py              # Database models
-│                          # - User model
-│                          # - BlogPost model
-│                          # - Other models
-│
-├── forms.py               # WTForms for validation
-│                          # - LoginForm
-│                          # - SignupForm
-│                          # - BlogPostForm
-│
+├── app.py                 # Flask app factory + routes
+├── models.py              # Database models (User, Admin)
+├── forms.py               # WTForms validation (SignUp, Login)
+├── config.py              # Configuration (Dev, Test, Prod)
+├── extension.py           # Flask extensions (db, migrate, login_manager)
 ├── decorators.py          # Custom decorators
-│                          # - @login_required
-│                          # - @admin_required
-│
-├── static/                # Static files (not served by Flask in production)
-│   ├── css/
-│   │   └── style.css      # Main stylesheet (mobile-responsive)
-│   └── img/               # Images directory
-│
-├── templates/             # Jinja2 HTML templates
-│   ├── homepage.html      # Main homepage
-│   ├── login.html         # Login page
-│   ├── signup.html        # Signup page
-│   ├── contactus.html     # Contact form page
-│   ├── admin/
-│   │   └── admindash.html # Admin dashboard
-│   └── user/
-│       └── userdash.html  # User dashboard
-│
-├── migrations/            # Alembic database migrations
-│                          # - Generated automatically with flask db migrate
-│
-└── instance/              # Instance-specific files (ignored in git)
-    └── app.db             # SQLite database
+├── static/css/style.css   # Responsive styling
+├── templates/             # Jinja2 templates
+│   ├── base.html          # Base template with navigation
+│   ├── homepage.html
+│   ├── login.html
+│   ├── signup.html
+│   ├── contactus.html
+│   ├── admin/admindash.html
+│   └── user/userdash.html
+├── migrations/            # Database migrations (Flask-Migrate)
+├── instance/app.db        # SQLite database
+└── uploads/               # User file uploads
 ```
 
 ## Development Workflow
 
-### 1. Create a Feature Branch
+### Create Feature Branch
 ```bash
 git checkout -b feature/your-feature-name
 ```
 
-### 2. Make Code Changes
+### Code Changes
 
-- Edit files in the project
-- Flask development server auto-reloads on save
-- Test your changes at `http://localhost:5000`
-
-### 3. Update Database (if needed)
-
-If you modify models in `models.py`:
-
-```bash
-flask db migrate -m "Description of changes"
-flask db upgrade
+**Adding a Model Field:**
+```python
+# models.py
+class User(db.Model):
+    # existing fields...
+    new_field = db.Column(db.String(100))
 ```
 
-### 4. Commit Changes
+**Adding a Form Field:**
+```python
+# forms.py
+class SignUpForm(FlaskForm):
+    # existing fields...
+    new_field = StringField('Label', validators=[DataRequired()])
+```
+
+**Adding a Route:**
+```python
+# app.py
+@app.route('/new-route', methods=['GET', 'POST'])
+@login_required  # Optional
+def new_route():
+    form = NewForm()
+    if form.validate_on_submit():
+        # Handle submission
+        pass
+    return render_template('template.html', form=form)
+```
+
+### Test & Commit
 ```bash
+# Test at http://localhost:5000
+# Commit
 git add .
 git commit -m "Description of changes"
-```
-
-### 5. Push and Create Pull Request
-```bash
 git push origin feature/your-feature-name
 ```
 
-## Adding New Features
+## Authentication
 
-### Example: Creating a New Model
-
-**1. Add to `models.py`:**
+**Protected Routes:**
 ```python
-from extension import db
-from datetime import datetime
+from flask_login import login_required, current_user
 
-class BlogPost(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    return render_template('dashboard.html', user=current_user)
 ```
 
-**2. Create migration:**
-```bash
-flask db migrate -m "Add BlogPost model"
-flask db upgrade
-```
-
-**3. Create a form in `forms.py`:**
+**Check User Type:**
 ```python
-from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, SubmitField
-from wtforms.validators import DataRequired, Length
-
-class BlogPostForm(FlaskForm):
-    title = StringField('Title', validators=[DataRequired(), Length(min=5, max=200)])
-    content = TextAreaField('Content', validators=[DataRequired()])
-    submit = SubmitField('Post')
+if isinstance(current_user, Admin):
+    # Admin only
+    pass
+elif isinstance(current_user, User):
+    # User only
+    pass
 ```
 
-**4. Add routes in `app.py`:**
+**Session Management:**
 ```python
-@app.route('/post/create', methods=['GET', 'POST'])
-def create_post():
-    form = BlogPostForm()
-    if form.validate_on_submit():
-        # Handle form submission
-        pass
-    return render_template('create_post.html', form=form)
-```
+from flask_login import login_user, logout_user
 
-**5. Create template `templates/create_post.html`**
+login_user(user, remember=True)
+logout_user()
+```
 
 ## CSS Styling
 
-### Mobile-Responsive Design
+Mobile breakpoints in `static/css/style.css`:
+- **Desktop:** > 768px
+- **Tablet:** 481px - 768px  
+- **Mobile:** ≤ 480px
 
-The main stylesheet is `static/css/style.css` with responsive breakpoints:
+Colors:
+- **Primary:** `#f5a623` (Orange)
+- **Dark:** `#1a1a1a`
+- **Text:** `#333`
 
-- **Desktop:** Full layout
-- **Tablet (≤768px):** Adjusted spacing and font sizes
-- **Mobile (≤480px):** Single column, optimized touch targets
-
-### Colors Used
-
-- **Primary Orange:** `#f5a623`
-- **Dark Background:** `#1a1a1a`
-- **Text Color:** `#333`
-- **Light Background:** `#fafafa`
-
-### Example: Adding Responsive CSS
-
+Example responsive CSS:
 ```css
-/* Desktop */
-.element {
-    font-size: 20px;
-    padding: 20px;
-}
+.element { font-size: 16px; padding: 10px; }
 
-/* Tablet */
-@media (max-width: 768px) {
-    .element {
-        font-size: 18px;
-        padding: 15px;
-    }
-}
-
-/* Mobile */
-@media (max-width: 480px) {
-    .element {
-        font-size: 16px;
-        padding: 10px;
-    }
+@media (min-width: 768px) {
+    .element { font-size: 18px; padding: 15px; }
 }
 ```
 
 ## Debugging
 
-### Enable Debug Mode
+**Enable debug mode:**
+```bash
+# Already enabled in .env (FLASK_ENV=development)
+python app.py
+```
 
-Set `FLASK_ENV=development` in `.env` (already done)
-
-### Use Python Debugger
-
+**Python debugger:**
 ```python
 import pdb
-
-@app.route('/debug-route')
-def debug_route():
-    pdb.set_trace()  # Execution will pause here
-    return render_template('page.html')
+pdb.set_trace()  # Execution pauses here
 ```
 
-### View Flask Output
+**Browser DevTools (F12):**
+- Console: JavaScript errors
+- Network: HTTP requests
+- Inspect: CSS debugging
+- Device toolbar: Responsive testing
 
-Check the terminal where `flask run` is executing for:
-- Route information
-- Database queries
-- Errors and warnings
-
-### Use Browser Developer Tools
-
-- Press `F12` to open Developer Tools
-- Check Console tab for JavaScript errors
-- Check Network tab for HTTP requests
-- Use Inspect Element to debug CSS
-
-## Testing
-
-### Manual Testing
-
-1. Start `flask run`
-2. Open `http://localhost:5000`
-3. Test all pages and features
-4. Check responsive design (F12 → Toggle Device Toolbar)
-
-### Automated Testing (Future)
-
-As the project grows, add unit tests:
-
-```bash
-pytest tests/
-```
+**Check logs:**
+- Terminal output shows routes, queries, errors
+- Flask logger: `app.logger.debug('message')`
 
 ## Common Issues
 
-### "ModuleNotFoundError: No module named 'flask'"
+| Issue | Solution |
+|-------|----------|
+| Virtual env not activated | `venv\Scripts\activate` |
+| Module not found | `pip install -r requirements.txt` |
+| Database locked | Delete `instance/app.db`, restart |
+| Changes not showing | Hard refresh: `Ctrl+Shift+R` |
+| Port in use | `flask run --port 5001` |
+| Form validation fails | Check CSRF token in template |
 
-**Solution:** Make sure virtual environment is activated
-```bash
-venv\Scripts\activate  # Windows
-source venv/bin/activate  # macOS/Linux
+## Code Standards
+
+- **Functions:** `lowercase_with_underscores`
+- **Classes:** `PascalCase`  
+- **Constants:** `UPPERCASE`
+- Add docstrings to functions
+- Comment complex logic
+
+**Example:**
+```python
+def validate_user_email(email: str) -> bool:
+    """Check if email is registered."""
+    return User.query.filter_by(email=email).first() is not None
 ```
-
-### Database errors
-
-**Solution:** Reset the database
-```bash
-rm instance/app.db
-flask db upgrade
-```
-
-### Changes not showing up
-
-**Solution:** Hard refresh browser (Ctrl+Shift+R or Cmd+Shift+R)
-
-## Performance Tips
-
-1. **Use database indexes** for frequently queried fields
-2. **Cache static files** in production
-3. **Optimize images** before uploading
-4. **Use CDN** for external libraries (already using Font Awesome CDN)
-5. **Minimize CSS/JavaScript** in production
 
 ## Resources
 
-- [Flask Documentation](https://flask.palletsprojects.com/)
-- [SQLAlchemy Documentation](https://docs.sqlalchemy.org/)
-- [WTForms Documentation](https://wtforms.readthedocs.io/)
-- [Font Awesome Icons](https://fontawesome.com/icons)
+- [Flask](https://flask.palletsprojects.com/)
+- [SQLAlchemy](https://docs.sqlalchemy.org/)
+- [WTForms](https://wtforms.readthedocs.io/)
+- [Flask-Login](https://flask-login.readthedocs.io/)
 
 ---
+
+See **README.md** for full setup, testing, and deployment info!
 
 **Happy Development! 🚀**
