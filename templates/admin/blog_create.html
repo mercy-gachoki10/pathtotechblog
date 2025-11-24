@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block title %}Create Blog Post - Admin{% endblock %}
+
+{% block content %}
+    <section class="admin-blog-section">
+        <div class="admin-blog-container">
+            <div class="admin-blog-header">
+                <h1>✍️ Create New Blog Post</h1>
+                <p class="subtitle">Share your thoughts and insights with the community</p>
+            </div>
+
+            <form method="POST" enctype="multipart/form-data" class="blog-form">
+                {{ form.hidden_tag() }}
+
+                <div class="form-group">
+                    {{ form.title.label }}
+                    {% if form.title.errors %}
+                        {{ form.title(class="form-input form-input-error") }}
+                        <div class="error-message">
+                            {% for error in form.title.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.title(class="form-input", placeholder="Enter blog post title...") }}
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.excerpt.label }}
+                    <p class="form-help">Optional: A short preview of your blog post (500 characters max)</p>
+                    {% if form.excerpt.errors %}
+                        {{ form.excerpt(class="form-textarea form-input-error", placeholder="Write a short excerpt...") }}
+                        <div class="error-message">
+                            {% for error in form.excerpt.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.excerpt(class="form-textarea", placeholder="Write a short excerpt...") }}
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.content.label }}
+                    {% if form.content.errors %}
+                        {{ form.content(class="form-textarea form-input-error", placeholder="Write your blog content here...", rows="15") }}
+                        <div class="error-message">
+                            {% for error in form.content.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.content(class="form-textarea", placeholder="Write your blog content here...", rows="15") }}
+                    {% endif %}
+                    <p class="form-help">Tip: You can use HTML formatting for better layout</p>
+                </div>
+
+                <div class="form-group">
+                    {{ form.featured_image.label }}
+                    <p class="form-help">Optional: Upload a featured image for your blog post (JPG, PNG, GIF)</p>
+                    {% if form.featured_image.errors %}
+                        {{ form.featured_image(class="form-input form-input-error") }}
+                        <div class="error-message">
+                            {% for error in form.featured_image.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.featured_image(class="form-input") }}
+                    {% endif %}
+                </div>
+
+                <div class="form-group checkbox">
+                    {{ form.is_published() }}
+                    {{ form.is_published.label }}
+                    <p class="form-help">Check to publish immediately. Uncheck to save as draft.</p>
+                </div>
+
+                <div class="form-actions">
+                    {{ form.submit(class="btn btn-primary") }}
+                    <a href="{{ url_for('admin_blog_list') }}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <style>
+        .admin-blog-section {
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: calc(100vh - 150px);
+        }
+
+        .admin-blog-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .admin-blog-header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 2px solid #f5a623;
+            padding-bottom: 20px;
+        }
+
+        .admin-blog-header h1 {
+            font-size: 2.2rem;
+            color: #1a1a1a;
+            margin: 0 0 10px 0;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+        .blog-form {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+
+        .form-input,
+        .form-textarea {
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-input-error,
+        .form-textarea.form-input-error {
+            border-color: #e74c3c;
+            background-color: #fadbd8;
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 150px;
+        }
+
+        .form-help {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+            margin-bottom: 0;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            padding: 8px;
+            background-color: #fadbd8;
+            border-left: 3px solid #e74c3c;
+            border-radius: 3px;
+        }
+
+        .error-message span {
+            display: block;
+        }
+
+        .form-group.checkbox {
+            flex-direction: row;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group.checkbox input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .form-group.checkbox label {
+            margin: 0;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        @media (max-width: 768px) {
+            .admin-blog-container {
+                padding: 25px;
+            }
+
+            .admin-blog-header h1 {
+                font-size: 1.8rem;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+{% endblock %}

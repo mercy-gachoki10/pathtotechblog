@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block title %}Blog - Women in Tech Community{% endblock %}
+
+{% block content %}
+    <section class="blog-section">
+        <div class="blog-container">
+            <div class="blog-header">
+                <h1>Women in Tech Blog 📝</h1>
+                <p class="blog-subtitle">Stories, insights, and experiences from women in technology</p>
+            </div>
+
+            {% if posts.items %}
+                <div class="blog-grid">
+                    {% for post in posts.items %}
+                        <article class="blog-card">
+                            {% if post.featured_image %}
+                                <img src="{{ url_for('uploaded_file', filename=post.featured_image.split('/')[-1]) }}" alt="{{ post.title }}" class="blog-card-image">
+                            {% else %}
+                                <div class="blog-card-image-placeholder">
+                                    <i class="fas fa-image"></i>
+                                </div>
+                            {% endif %}
+                            
+                            <div class="blog-card-content">
+                                <h2><a href="{{ url_for('blog_detail', blog_id=post.id) }}">{{ post.title }}</a></h2>
+                                
+                                <p class="blog-meta">
+                                    <span class="author">By {{ post.author.username }}</span>
+                                    <span class="date">{{ post.published_at.strftime('%B %d, %Y') }}</span>
+                                </p>
+                                
+                                <p class="blog-excerpt">
+                                    {% if post.excerpt %}
+                                        {{ post.excerpt }}
+                                    {% else %}
+                                        {{ post.content[:200] }}...
+                                    {% endif %}
+                                </p>
+                                
+                                <a href="{{ url_for('blog_detail', blog_id=post.id) }}" class="read-more-btn">Read More →</a>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                {% if posts.pages > 1 %}
+                    <div class="pagination">
+                        {% if posts.has_prev %}
+                            <a href="{{ url_for('blog', page=posts.prev_num) }}" class="pagination-btn">← Previous</a>
+                        {% endif %}
+                        
+                        <span class="pagination-info">
+                            Page {{ posts.page }} of {{ posts.pages }}
+                        </span>
+                        
+                        {% if posts.has_next %}
+                            <a href="{{ url_for('blog', page=posts.next_num) }}" class="pagination-btn">Next →</a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="no-posts">
+                    <i class="fas fa-inbox"></i>
+                    <h2>No Blog Posts Yet</h2>
+                    <p>Check back soon for exciting stories and insights!</p>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <style>
+        .blog-section {
+            padding: 60px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: calc(100vh - 150px);
+        }
+
+        .blog-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .blog-header {
+            text-align: center;
+            color: white;
+            margin-bottom: 50px;
+        }
+
+        .blog-header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        .blog-subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .blog-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .blog-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .blog-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .blog-card-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+        }
+
+        .blog-card-image-placeholder {
+            width: 100%;
+            height: 250px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 4rem;
+        }
+
+        .blog-card-content {
+            padding: 25px;
+        }
+
+        .blog-card-content h2 {
+            margin: 0 0 15px 0;
+            font-size: 1.4rem;
+            color: #1a1a1a;
+        }
+
+        .blog-card-content h2 a {
+            color: #1a1a1a;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .blog-card-content h2 a:hover {
+            color: #f5a623;
+        }
+
+        .blog-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .blog-excerpt {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .read-more-btn {
+            display: inline-block;
+            color: #f5a623;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .read-more-btn:hover {
+            color: #764ba2;
+        }
+
+        .no-posts {
+            text-align: center;
+            color: white;
+            padding: 60px 20px;
+        }
+
+        .no-posts i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.8;
+        }
+
+        .no-posts h2 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+
+        .pagination-btn {
+            background: white;
+            color: #667eea;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .pagination-btn:hover {
+            background: #f5a623;
+            color: white;
+        }
+
+        .pagination-info {
+            color: white;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .blog-header h1 {
+                font-size: 2rem;
+            }
+
+            .blog-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+{% endblock %}

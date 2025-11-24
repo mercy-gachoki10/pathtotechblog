@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+
+{% block title %}My Blog Posts - Admin{% endblock %}
+
+{% block content %}
+    <section class="admin-blog-list-section">
+        <div class="admin-blog-list-container">
+            <div class="admin-blog-list-header">
+                <h1>📚 My Blog Posts</h1>
+                <a href="{{ url_for('create_blog') }}" class="btn btn-create">✍️ Create New Post</a>
+            </div>
+
+            {% if posts.items %}
+                <div class="blog-table-wrapper">
+                    <table class="blog-table">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for post in posts.items %}
+                                <tr class="blog-row">
+                                    <td class="blog-title">
+                                        <strong>{{ post.title }}</strong>
+                                    </td>
+                                    <td class="blog-status">
+                                        {% if post.is_published %}
+                                            <span class="status-badge published">Published</span>
+                                        {% else %}
+                                            <span class="status-badge draft">Draft</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="blog-date">
+                                        {{ post.created_at.strftime('%b %d, %Y') }}
+                                    </td>
+                                    <td class="blog-actions">
+                                        <a href="{{ url_for('blog_detail', blog_id=post.id) }}" class="action-btn view" title="View">👁️</a>
+                                        <a href="{{ url_for('edit_blog', blog_id=post.id) }}" class="action-btn edit" title="Edit">✏️</a>
+                                        <form method="POST" action="{{ url_for('delete_blog', blog_id=post.id) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this blog post?');">
+                                            <button type="submit" class="action-btn delete" title="Delete">🗑️</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if posts.pages > 1 %}
+                    <div class="pagination">
+                        {% if posts.has_prev %}
+                            <a href="{{ url_for('admin_blog_list', page=posts.prev_num) }}" class="pagination-btn">← Previous</a>
+                        {% endif %}
+                        
+                        <span class="pagination-info">
+                            Page {{ posts.page }} of {{ posts.pages }}
+                        </span>
+                        
+                        {% if posts.has_next %}
+                            <a href="{{ url_for('admin_blog_list', page=posts.next_num) }}" class="pagination-btn">Next →</a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="no-posts">
+                    <i class="fas fa-inbox"></i>
+                    <h2>No Blog Posts Yet</h2>
+                    <p>Create your first blog post to get started!</p>
+                    <a href="{{ url_for('create_blog') }}" class="btn btn-create">Create First Post</a>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <style>
+        .admin-blog-list-section {
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: calc(100vh - 150px);
+        }
+
+        .admin-blog-list-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .admin-blog-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f5a623;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .admin-blog-list-header h1 {
+            font-size: 2rem;
+            color: #1a1a1a;
+            margin: 0;
+        }
+
+        .btn-create {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-create:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .blog-table-wrapper {
+            overflow-x: auto;
+            margin-bottom: 30px;
+        }
+
+        .blog-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .blog-table thead {
+            background: #f5f5f5;
+        }
+
+        .blog-table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #1a1a1a;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .blog-table td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            color: #333;
+        }
+
+        .blog-row:hover {
+            background: #f9f9f9;
+        }
+
+        .blog-title {
+            font-weight: 500;
+        }
+
+        .blog-status {
+            text-align: center;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-badge.published {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.draft {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .blog-date {
+            font-size: 0.95rem;
+            color: #666;
+        }
+
+        .blog-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn.view {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .action-btn.view:hover {
+            background: #c3e6cb;
+        }
+
+        .action-btn.edit {
+            background: #cfe2ff;
+            color: #084298;
+        }
+
+        .action-btn.edit:hover {
+            background: #b6d4fe;
+        }
+
+        .action-btn.delete {
+            background: #f8d7da;
+            color: #842029;
+        }
+
+        .action-btn.delete:hover {
+            background: #f5c6cb;
+        }
+
+        .no-posts {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .no-posts i {
+            font-size: 4rem;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+        .no-posts h2 {
+            font-size: 1.8rem;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+        }
+
+        .no-posts p {
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .pagination-btn {
+            background: white;
+            color: #667eea;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            border: 1px solid #ddd;
+            transition: all 0.3s ease;
+        }
+
+        .pagination-btn:hover {
+            background: #f5a623;
+            color: white;
+            border-color: #f5a623;
+        }
+
+        .pagination-info {
+            color: #666;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .admin-blog-list-container {
+                padding: 25px;
+            }
+
+            .admin-blog-list-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .btn-create {
+                width: 100%;
+                text-align: center;
+            }
+
+            .blog-table {
+                font-size: 0.9rem;
+            }
+
+            .blog-table th,
+            .blog-table td {
+                padding: 10px;
+            }
+
+            .action-btn {
+                width: 32px;
+                height: 32px;
+                font-size: 0.95rem;
+            }
+        }
+    </style>
+{% endblock %}

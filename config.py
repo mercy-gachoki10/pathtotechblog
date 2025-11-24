@@ -10,6 +10,17 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     WTF_CSRF_ENABLED = True
     
+    # Upload configuration
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
+    UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'doc', 'docx'}
+    
+    # Ensure upload folder exists
+    @classmethod
+    def init_app(cls, app):
+        """Initialize upload folder"""
+        os.makedirs(cls.UPLOAD_FOLDER, exist_ok=True)
+    
 class DevelopmentConfig(Config):
     """Development configuration"""
     DEBUG = True

@@ -30,7 +30,8 @@ Visit `http://localhost:5000` - Admin account auto-created:
 - ✨ Responsive design (mobile, tablet, desktop)
 - 🔐 Secure user authentication (login/signup) with password hashing
 - 👤 Separate User and Admin accounts with role-based dashboards
-- 📝 Blog/article posting (coming soon)
+- 📝 **Blog system** - Admin-only blog post creation, editing, deletion, and publishing
+- 🖼️ **File uploads** - Featured images for blog posts with secure file handling
 - 👥 Community features (coming soon)
 - 👨‍💼 Admin dashboard with management tools
 - 🎨 Beautiful UI inspired by SheCan Code
@@ -165,6 +166,80 @@ Fixed critical session collision bug where User and Admin sessions would conflic
 - Admin `get_id()` now returns `admin_{id}` format
 - User loader automatically routes to correct table based on prefix
 
+## Blog System
+
+### Admin Blog Management
+
+**Admin-only features** available at `/admin/blog/`:
+- ✅ Create blog posts with title, content, excerpt, featured image
+- ✅ Edit existing posts (change content, image, status)
+- ✅ Delete posts (removes from database and deletes image files)
+- ✅ Publish/unpublish posts (control visibility)
+- ✅ View all your posts in a dashboard
+
+### Public Blog Access
+
+**Anyone can view published blogs** (no login required):
+- ✅ Browse all published blog posts at `/blog`
+- ✅ View individual blog posts at `/blog/<id>`
+- ✅ See author name and publication date
+- ✅ Beautiful responsive grid layout
+- ✅ Pagination (10 posts per page)
+
+### File Upload System
+
+**Featured image uploads:**
+- 📁 Uploaded to `uploads/` folder
+- 🔒 Secure filename generation with timestamps
+- 📏 Max file size: 16MB
+- 🖼️ Supported formats: JPG, JPEG, PNG, GIF, PDF, DOC, DOCX
+- 🗑️ Automatic cleanup when posts are deleted
+
+### Blog Database Schema
+
+```python
+BlogPost Model:
+├── id (Integer, Primary Key)
+├── title (String, max 200 chars)
+├── content (Text, full blog content)
+├── excerpt (String, max 500 chars, preview text)
+├── featured_image (String, file path)
+├── author_id (Foreign Key → Admin)
+├── is_published (Boolean, visible to public)
+├── created_at (DateTime)
+├── updated_at (DateTime)
+└── published_at (DateTime)
+```
+
+### Blog Routes
+
+**Admin Routes (requires login as admin):**
+```
+GET    /admin/blog/create       Show create form
+POST   /admin/blog/create       Create new blog post
+GET    /admin/blog/list         View all your posts
+GET    /admin/blog/edit/<id>    Show edit form
+POST   /admin/blog/edit/<id>    Update blog post
+POST   /admin/blog/delete/<id>  Delete blog post
+```
+
+**Public Routes (no login required):**
+```
+GET    /blog                    List all published posts
+GET    /blog/<id>               View single blog post
+```
+
+### Blog Templates
+
+**Admin templates:**
+- `templates/admin/blog_create.html` - Create new blog post form
+- `templates/admin/blog_list.html` - View all your posts in table format
+- `templates/admin/blog_edit.html` - Edit existing blog post
+
+**Public templates:**
+- `templates/blog/blog_list.html` - Browse published blogs (grid layout)
+- `templates/blog/blog_detail.html` - Read full blog post
+
 ## Technology Stack
 
 - **Backend:** Flask, Flask-SQLAlchemy, Flask-Migrate
@@ -190,6 +265,9 @@ Fixed critical session collision bug where User and Admin sessions would conflic
 - Password hashing and security
 - CSRF protection (Flask-WTF)
 - Protected routes with @login_required
+- **Blog system with admin-only post management** ✨
+- **File uploads for featured images** ✨
+- **Public blog viewing without login** ✨
 
 ### 🚧 Upcoming
 - Blog post creation and management

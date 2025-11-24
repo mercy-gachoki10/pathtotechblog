@@ -24,9 +24,10 @@
                 <div class="admin-actions">
                     <h2>Admin Functions</h2>
                     <ul>
-                        <li><a href="{{ url_for('blog') }}" class="action-link">Manage Blog Posts</a></li>
-                        <li><a href="{{ url_for('contact') }}" class="action-link">View Messages</a></li>
-                        <li><a href="{{ url_for('index') }}" class="action-link">Back to Home</a></li>
+                        <li><a href="{{ url_for('admin_blog_list') }}" class="action-link">📝 View My Blog Posts</a></li>
+                        <li><a href="{{ url_for('create_blog') }}" class="action-link">✍️ Create New Blog Post</a></li>
+                        <li><a href="{{ url_for('contact') }}" class="action-link">📧 View Messages</a></li>
+                        <li><a href="{{ url_for('index') }}" class="action-link">🏠 Back to Home</a></li>
                     </ul>
                 </div>
             </div>

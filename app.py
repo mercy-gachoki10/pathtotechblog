@@ -1,8 +1,25 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory
 from flask_login import login_user, logout_user, login_required, current_user
 from config import Config
 from extension import db, migrate, login_manager
+from werkzeug.utils import secure_filename
 import os
+
+def allowed_file(filename):
+    """Check if file extension is allowed"""
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in Config.ALLOWED_EXTENSIONS
+
+def save_upload_file(file):
+    """Save uploaded file and return the relative path"""
+    if file and file.filename and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        # Add timestamp to filename to make it unique
+        import time
+        filename = f"{int(time.time())}_{filename}"
+        filepath = os.path.join(Config.UPLOAD_FOLDER, filename)
+        file.save(filepath)
+        return f"uploads/{filename}"
+    return None
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -14,8 +31,11 @@ def create_app(config_class=Config):
     login_manager.init_app(app)
     
     # Import models (must be after extension initialization)
-    from models import User, Admin
-    from forms import SignUpForm, LoginForm
+    from models import User, Admin, BlogPost
+    from forms import SignUpForm, LoginForm, CreateBlogForm, EditBlogForm
+    
+    # Add isinstance to template globals
+    app.jinja_env.globals.update(isinstance=isinstance, Admin=Admin)
     
     # Register blueprints
     with app.app_context():
@@ -108,10 +128,154 @@ def create_app(config_class=Config):
         
         return render_template('signup.html', form=form)
     
-    # Blog route
+    # Blog route - public view of all published blogs
     @app.route('/blog')
     def blog():
-        return render_template('blog.html')
+        """View all published blog posts"""
+        page = request.args.get('page', 1, type=int)
+        posts = BlogPost.query.filter_by(is_published=True).order_by(BlogPost.published_at.desc()).paginate(page=page, per_page=10)
+        return render_template('blog/blog_list.html', posts=posts)
+    
+    # Blog detail route - view single blog post (public)
+    @app.route('/blog/<int:blog_id>')
+    def blog_detail(blog_id):
+        """View a single blog post"""
+        post = BlogPost.query.get_or_404(blog_id)
+        
+        # Only show published posts to non-admins
+        if not post.is_published and not (current_user.is_authenticated and isinstance(current_user, Admin)):
+            flash('This blog post is not available.', 'error')
+            return redirect(url_for('blog'))
+        
+        return render_template('blog/blog_detail.html', post=post)
+    
+    # Admin: Create blog post
+    @app.route('/admin/blog/create', methods=['GET', 'POST'])
+    @login_required
+    def create_blog():
+        """Create a new blog post (admin only)"""
+        if not isinstance(current_user, Admin):
+            flash('You do not have permission to access this page.', 'error')
+            return redirect(url_for('index'))
+        
+        form = CreateBlogForm()
+        if form.validate_on_submit():
+            # Handle file upload
+            featured_image = None
+            if form.featured_image.data:
+                featured_image = save_upload_file(form.featured_image.data)
+            
+            # Create blog post
+            blog = BlogPost(
+                title=form.title.data,
+                excerpt=form.excerpt.data,
+                content=form.content.data,
+                featured_image=featured_image,
+                author_id=current_user.id
+            )
+            
+            # Publish if checkbox was checked
+            if form.is_published.data:
+                blog.publish()
+            
+            db.session.add(blog)
+            db.session.commit()
+            
+            flash('Blog post created successfully!', 'success')
+            return redirect(url_for('admin_blog_list'))
+        
+        return render_template('admin/blog_create.html', form=form)
+    
+    # Admin: List all blog posts
+    @app.route('/admin/blog/list')
+    @login_required
+    def admin_blog_list():
+        """List all blog posts for admin"""
+        if not isinstance(current_user, Admin):
+            flash('You do not have permission to access this page.', 'error')
+            return redirect(url_for('index'))
+        
+        page = request.args.get('page', 1, type=int)
+        posts = BlogPost.query.filter_by(author_id=current_user.id).order_by(BlogPost.created_at.desc()).paginate(page=page, per_page=10)
+        return render_template('admin/blog_list.html', posts=posts)
+    
+    # Admin: Edit blog post
+    @app.route('/admin/blog/edit/<int:blog_id>', methods=['GET', 'POST'])
+    @login_required
+    def edit_blog(blog_id):
+        """Edit a blog post (admin only)"""
+        if not isinstance(current_user, Admin):
+            flash('You do not have permission to access this page.', 'error')
+            return redirect(url_for('index'))
+        
+        blog = BlogPost.query.get_or_404(blog_id)
+        
+        # Check if user is the author
+        if blog.author_id != current_user.id:
+            flash('You can only edit your own blog posts.', 'error')
+            return redirect(url_for('admin_blog_list'))
+        
+        form = EditBlogForm()
+        if form.validate_on_submit():
+            blog.title = form.title.data
+            blog.excerpt = form.excerpt.data
+            blog.content = form.content.data
+            
+            # Handle file upload
+            if form.featured_image.data:
+                featured_image_path = save_upload_file(form.featured_image.data)
+                if featured_image_path:
+                    blog.featured_image = featured_image_path
+            
+            # Handle publish status
+            if form.is_published.data and not blog.is_published:
+                blog.publish()
+            elif not form.is_published.data and blog.is_published:
+                blog.unpublish()
+            
+            db.session.commit()
+            flash('Blog post updated successfully!', 'success')
+            return redirect(url_for('admin_blog_list'))
+        
+        # Pre-fill form with existing data
+        elif request.method == 'GET':
+            form.title.data = blog.title
+            form.excerpt.data = blog.excerpt
+            form.content.data = blog.content
+            form.is_published.data = blog.is_published
+        
+        return render_template('admin/blog_edit.html', form=form, blog=blog)
+    
+    # Admin: Delete blog post
+    @app.route('/admin/blog/delete/<int:blog_id>', methods=['POST'])
+    @login_required
+    def delete_blog(blog_id):
+        """Delete a blog post (admin only)"""
+        if not isinstance(current_user, Admin):
+            flash('You do not have permission to access this page.', 'error')
+            return redirect(url_for('index'))
+        
+        blog = BlogPost.query.get_or_404(blog_id)
+        
+        # Check if user is the author
+        if blog.author_id != current_user.id:
+            flash('You can only delete your own blog posts.', 'error')
+            return redirect(url_for('admin_blog_list'))
+        
+        # Delete featured image if it exists
+        if blog.featured_image:
+            try:
+                filepath = os.path.join(app.root_path, blog.featured_image)
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+            except Exception as e:
+                app.logger.error(f'Error deleting file: {e}')
+        
+        db.session.delete(blog)
+        db.session.commit()
+        
+        flash('Blog post deleted successfully!', 'success')
+        return redirect(url_for('admin_blog_list'))
     
     # User Dashboard route
     @app.route('/dashboard/user')
@@ -137,6 +301,12 @@ def create_app(config_class=Config):
         logout_user()
         flash('You have been logged out successfully.', 'success')
         return redirect(url_for('index'))
+    
+    # Serve uploaded files
+    @app.route('/uploads/<filename>')
+    def uploaded_file(filename):
+        """Serve uploaded files from the uploads folder"""
+        return send_from_directory(Config.UPLOAD_FOLDER, filename)
     
     return app
 

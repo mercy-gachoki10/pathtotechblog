@@ -36,6 +36,9 @@ class Admin(UserMixin, db.Model):
     password = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationship to blog posts
+    blog_posts = db.relationship('BlogPost', backref='author', lazy=True, cascade='all, delete-orphan')
 
     def __repr__(self):
         return f'<Admin {self.username}>'
@@ -75,3 +78,30 @@ def load_user(user_id):
             return Admin.query.get(user_id_num)
     except (ValueError, AttributeError):
         return None
+
+
+class BlogPost(db.Model):
+    """Blog post model for content management"""
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False, index=True)
+    content = db.Column(db.Text, nullable=False)
+    featured_image = db.Column(db.String(255), nullable=True)  # Path to uploaded image
+    excerpt = db.Column(db.String(500), nullable=True)  # Short preview of the post
+    author_id = db.Column(db.Integer, db.ForeignKey('admin.id'), nullable=False)
+    is_published = db.Column(db.Boolean, default=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    published_at = db.Column(db.DateTime, nullable=True)  # When post was published
+
+    def __repr__(self):
+        return f'<BlogPost {self.title}>'
+    
+    def publish(self):
+        """Publish the blog post"""
+        self.is_published = True
+        self.published_at = datetime.utcnow()
+    
+    def unpublish(self):
+        """Unpublish the blog post"""
+        self.is_published = False
+        self.published_at = None
