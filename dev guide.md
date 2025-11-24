@@ -412,6 +412,107 @@ This enables templates to check:
 
 All templates use `base.html` for consistent styling and navigation.
 
+## Comments System Development
+
+### Comment Model Structure
+
+Located in `models.py`:
+```python
+class Comment(db.Model):
+    """Comment model for blog post comments"""
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.Text, nullable=False)
+    author_name = db.Column(db.String(120), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    blog_post_id = db.Column(db.Integer, db.ForeignKey('blog_post.id'), nullable=False)
+    parent_comment_id = db.Column(db.Integer, db.ForeignKey('comment.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_approved = db.Column(db.Boolean, default=True)
+    
+    author = db.relationship('User', backref='comments')
+    replies = db.relationship('Comment', backref=db.backref('parent', remote_side=[id]), cascade='all, delete-orphan')
+```
+
+BlogPost model updated with:
+```python
+allow_comments = db.Column(db.Boolean, default=True)
+comments = db.relationship('Comment', backref='blog_post', lazy=True, cascade='all, delete-orphan')
+```
+
+### Comment Forms
+
+Located in `forms.py`:
+```python
+class CommentForm(FlaskForm):
+    author_name = StringField('Your Name', validators=[DataRequired(), Length(min=2, max=120)])
+    content = TextAreaField('Your Comment', validators=[DataRequired(), Length(min=3, max=2000)])
+    submit = SubmitField('Post Comment')
+
+class ReplyCommentForm(FlaskForm):
+    author_name = StringField('Your Name', validators=[DataRequired(), Length(min=2, max=120)])
+    content = TextAreaField('Your Reply', validators=[DataRequired(), Length(min=3, max=2000)])
+    submit = SubmitField('Post Reply')
+```
+
+### Comment Routes
+
+Located in `app.py`:
+
+**Post comment (public):**
+```python
+@app.route('/blog/<int:blog_id>/comment', methods=['POST'])
+def post_comment(blog_id):
+    """Anyone can post a comment"""
+    # Gets user_id if logged in, None if anonymous
+    # Creates Comment record tied to blog post
+```
+
+**Reply to comment (logged-in only):**
+```python
+@app.route('/blog/<int:blog_id>/comment/<int:comment_id>/reply', methods=['POST'])
+def reply_comment(blog_id, comment_id):
+    """Only logged-in users can reply"""
+    # Sets parent_comment_id to nest reply under original
+```
+
+**Toggle comments (admin):**
+```python
+@app.route('/admin/blog/<int:blog_id>/toggle-comments', methods=['POST'])
+def toggle_comments(blog_id):
+    """Admin can enable/disable comments on their posts"""
+```
+
+**Delete comment (admin):**
+```python
+@app.route('/admin/comment/<int:comment_id>/delete', methods=['POST'])
+def delete_comment(comment_id):
+    """Admin can delete any comment on their posts"""
+```
+
+### Testing Comments
+
+**Post a Comment:**
+1. View a published blog post
+2. Scroll to comments section
+3. Enter name and comment (no login needed)
+4. Click "Post Comment"
+5. See comment appear instantly
+
+**Reply to Comment:**
+1. Must be logged in as a user
+2. Click "Reply" under a comment
+3. Reply form appears
+4. Enter name (pre-filled with your name) and reply
+5. Click "Post Reply"
+6. Reply nested under parent comment
+
+**Admin Management:**
+1. Go to edit blog post
+2. Scroll to "Comments Settings"
+3. Click to enable/disable comments
+4. On blog post, click delete (🗑️) to remove comment
+
 ### Test & Commit
 ```bash
 # Test at http://localhost:5000

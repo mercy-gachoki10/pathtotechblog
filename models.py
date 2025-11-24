@@ -89,9 +89,13 @@ class BlogPost(db.Model):
     excerpt = db.Column(db.String(500), nullable=True)  # Short preview of the post
     author_id = db.Column(db.Integer, db.ForeignKey('admin.id'), nullable=False)
     is_published = db.Column(db.Boolean, default=False, index=True)
+    allow_comments = db.Column(db.Boolean, default=True)  # Admin can disable comments per post
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     published_at = db.Column(db.DateTime, nullable=True)  # When post was published
+    
+    # Relationship to comments
+    comments = db.relationship('Comment', backref='blog_post', lazy=True, cascade='all, delete-orphan')
 
     def __repr__(self):
         return f'<BlogPost {self.title}>'
@@ -105,3 +109,23 @@ class BlogPost(db.Model):
         """Unpublish the blog post"""
         self.is_published = False
         self.published_at = None
+
+
+class Comment(db.Model):
+    """Comment model for blog post comments"""
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.Text, nullable=False)
+    author_name = db.Column(db.String(120), nullable=False)  # Username or display name
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # NULL if not logged in
+    blog_post_id = db.Column(db.Integer, db.ForeignKey('blog_post.id'), nullable=False)
+    parent_comment_id = db.Column(db.Integer, db.ForeignKey('comment.id'), nullable=True)  # For replies
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_approved = db.Column(db.Boolean, default=True)  # Admin moderation option
+    
+    # Relationships
+    author = db.relationship('User', backref='comments')
+    replies = db.relationship('Comment', backref=db.backref('parent', remote_side=[id]), cascade='all, delete-orphan')
+
+    def __repr__(self):
+        return f'<Comment by {self.author_name}>'

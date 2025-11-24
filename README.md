@@ -240,6 +240,81 @@ GET    /blog/<id>               View single blog post
 - `templates/blog/blog_list.html` - Browse published blogs (grid layout)
 - `templates/blog/blog_detail.html` - Read full blog post
 
+## Comments System
+
+### User Comment Features
+
+**Anyone can comment** (logged in or not):
+- ✅ Post comments on published blog posts
+- ✅ View all comments and replies without login
+- ✅ See commenter name, date, and time
+- ✅ Beautiful responsive comment display
+- ✅ Comment count shown in blog detail
+
+**Logged-in users can:**
+- ✅ Reply to existing comments
+- ✅ Reply form pre-fills with their name
+- ✅ Toggle reply forms with smooth UI
+
+### Admin Comment Management
+
+**Admins can:**
+- ✅ Disable/enable comments per blog post
+- ✅ Delete any comment on their posts
+- ✅ Delete replies on their posts
+- ✅ Comments toggle button in edit post page
+
+### Comment Database Schema
+
+```python
+Comment Model:
+├── id (Integer, Primary Key)
+├── content (Text, comment content)
+├── author_name (String, display name)
+├── user_id (Integer, FK → User, nullable for anonymous)
+├── blog_post_id (Integer, FK → BlogPost)
+├── parent_comment_id (Integer, FK → Comment, nullable)
+├── created_at (DateTime)
+├── updated_at (DateTime)
+├── is_approved (Boolean, default True)
+└── Relationships:
+    ├── author (User relationship)
+    └── replies (self-referential for nested comments)
+
+BlogPost Model (extended):
+├── allow_comments (Boolean, default True)
+└── comments (relationship to all Comment records)
+```
+
+### Comment Routes
+
+**Public Routes (no login required):**
+```
+POST   /blog/<id>/comment              Post a new comment
+```
+
+**Logged-in User Routes:**
+```
+POST   /blog/<id>/comment/<id>/reply   Reply to a comment
+```
+
+**Admin Routes (comment author only):**
+```
+POST   /admin/comment/<id>/delete      Delete a comment
+POST   /admin/blog/<id>/toggle-comments Enable/disable comments on post
+```
+
+### Comments Features
+
+- **Anonymous Comments:** Anyone can comment without login
+- **User Comments:** Logged-in users are auto-filled with their name
+- **Replies:** Only logged-in users can reply to comments
+- **Timestamps:** All comments show date and time
+- **Moderation:** Admins can delete any comment on their posts
+- **Control:** Admins can disable comments per post
+- **Threading:** Replies are nested under parent comments
+- **No Nesting Limit:** Comments can have unlimited reply depth
+
 ## Technology Stack
 
 - **Backend:** Flask, Flask-SQLAlchemy, Flask-Migrate
@@ -268,6 +343,9 @@ GET    /blog/<id>               View single blog post
 - **Blog system with admin-only post management** ✨
 - **File uploads for featured images** ✨
 - **Public blog viewing without login** ✨
+- **Comments system with anonymous and user comments** 💬
+- **Nested comment replies** 💬
+- **Admin comment moderation** 💬
 
 ### 🚧 Upcoming
 - Blog post creation and management
