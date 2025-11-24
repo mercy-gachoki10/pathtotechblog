@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Women in Tech Community{% endblock %}
+
+{% block content %}
+    <section class="dashboard-section">
+        <div class="dashboard-container">
+            <div class="dashboard-header">
+                <h1>Welcome, {{ user.first_name }}! 👋</h1>
+                <p class="dashboard-subtitle">You are now logged in to your account</p>
+            </div>
+
+            <div class="dashboard-content">
+                <div class="user-info-card">
+                    <h2>Your Profile</h2>
+                    <div class="user-details">
+                        <p><strong>Name:</strong> {{ user.first_name }} {{ user.last_name }}</p>
+                        <p><strong>Email:</strong> {{ user.email }}</p>
+                        <p><strong>Member Since:</strong> {{ user.created_at.strftime('%B %d, %Y') }}</p>
+                    </div>
+                </div>
+
+                <div class="dashboard-actions">
+                    <h2>Quick Links</h2>
+                    <ul>
+                        <li><a href="{{ url_for('blog') }}" class="action-link">Read Blog Posts</a></li>
+                        <li><a href="{{ url_for('contact') }}" class="action-link">Contact Us</a></li>
+                        <li><a href="{{ url_for('index') }}" class="action-link">Back to Home</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <style>
+        .dashboard-section {
+            padding: 40px 20px;
+            min-height: calc(100vh - 150px);
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+
+        .dashboard-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .dashboard-header h1 {
+            font-size: 2.5rem;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .dashboard-subtitle {
+            font-size: 1.1rem;
+            color: #666;
+        }
+
+        .dashboard-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .user-info-card,
+        .dashboard-actions {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-info-card h2,
+        .dashboard-actions h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .user-details p {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+            color: #555;
+        }
+
+        .user-details p:last-child {
+            border-bottom: none;
+        }
+
+        .dashboard-actions ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .action-link {
+            display: block;
+            padding: 12px 0;
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 500;
+            border-bottom: 1px solid #eee;
+            transition: color 0.3s;
+        }
+
+        .action-link:hover {
+            color: #0056b3;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-content {
+                grid-template-columns: 1fr;
+            }
+
+            .dashboard-header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+{% endblock %}

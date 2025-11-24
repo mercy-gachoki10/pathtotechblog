@@ -18,8 +18,24 @@
         </a>
         <ul class="nav-links" id="navLinks">
             <li><a href="{{ url_for('blog') }}">BLOG</a></li>
-            <li><a href="{{ url_for('login') }}">LOGIN</a></li>
-            <li><a href="{{ url_for('signup') }}">SIGN UP</a></li>
+            {% if current_user.is_authenticated %}
+                <!-- User is logged in -->
+                <li class="nav-user-info">
+                    <a href="{% if current_user.__class__.__name__ == 'Admin' %}{{ url_for('admin_dashboard') }}{% else %}{{ url_for('user_dashboard') }}{% endif %}" class="welcome-user">
+                        Welcome, 
+                        {% if current_user.__class__.__name__ == 'Admin' %}
+                            Admin
+                        {% else %}
+                            {{ current_user.first_name }}
+                        {% endif %}
+                    </a>
+                </li>
+                <li><a href="{{ url_for('logout') }}" class="logout-btn">LOGOUT</a></li>
+            {% else %}
+                <!-- User is not logged in -->
+                <li><a href="{{ url_for('login') }}">LOGIN</a></li>
+                <li><a href="{{ url_for('signup') }}">SIGN UP</a></li>
+            {% endif %}
             <li><a href="{{ url_for('contact') }}">CONTACT US</a></li>
         </ul>
         <button class="mobile-menu-btn" id="mobileMenuBtn">
