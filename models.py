@@ -59,16 +59,27 @@ class Admin(UserMixin, db.Model):
 @login_manager.user_loader
 def load_user(user_id):
     """Load user by ID for Flask-Login - checks both User and Admin tables"""
+    if not user_id:
+        return None
+    
     try:
         # Parse the user_id to determine type
-        if '_' in user_id:
-            user_type, user_id_num = user_id.split('_')
+        if '_' in str(user_id):
+            parts = str(user_id).split('_', 1)
+            if len(parts) != 2:
+                return None
+            
+            user_type, user_id_num = parts
             user_id_num = int(user_id_num)
             
             if user_type == 'user':
-                return User.query.get(user_id_num)
+                user = User.query.get(user_id_num)
+                return user
             elif user_type == 'admin':
-                return Admin.query.get(user_id_num)
+                admin = Admin.query.get(user_id_num)
+                return admin
+            else:
+                return None
         else:
             # Fallback for old format (shouldn't happen)
             user_id_num = int(user_id)
@@ -76,7 +87,7 @@ def load_user(user_id):
             if user:
                 return user
             return Admin.query.get(user_id_num)
-    except (ValueError, AttributeError):
+    except (ValueError, AttributeError, TypeError) as e:
         return None
 
 

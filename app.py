@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory, session
 from flask_login import login_user, logout_user, login_required, current_user
 from config import Config
 from extension import db, migrate, login_manager
@@ -84,11 +84,14 @@ def create_app(config_class=Config):
         
         form = LoginForm()
         if form.validate_on_submit():
+            # Clear any existing session data before new login
+            session.clear()
+            
             # Try to authenticate as regular user first
             user = User.query.filter_by(email=form.email.data).first()
             
             if user and user.check_password(form.password.data):
-                login_user(user)
+                login_user(user, remember=False, fresh=True)
                 flash(f'Welcome back, {user.first_name}!', 'success')
                 return redirect(url_for('user_dashboard'))
             
@@ -96,7 +99,7 @@ def create_app(config_class=Config):
             admin = Admin.query.filter_by(email=form.email.data).first()
             
             if admin and admin.check_password(form.password.data):
-                login_user(admin)
+                login_user(admin, remember=False, fresh=True)
                 flash('Welcome admin!', 'success')
                 return redirect(url_for('admin_dashboard'))
             
@@ -300,6 +303,8 @@ def create_app(config_class=Config):
     @login_required
     def logout():
         logout_user()
+        # Clear all session data to prevent session carryover
+        session.clear()
         flash('You have been logged out successfully.', 'success')
         return redirect(url_for('index'))
     
